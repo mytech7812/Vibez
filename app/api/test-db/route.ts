@@ -1,18 +1,16 @@
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { supabase } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Fetch event
-    const { data: event, error: eventError } = await supabaseAdmin
+    const { data: event, error: eventError } = await supabase
       .from('events')
       .select('*')
       .single();
 
     if (eventError) throw eventError;
 
-    // Fetch tiers separately
-    const { data: tiers, error: tiersError } = await supabaseAdmin
+    const { data: tiers, error: tiersError } = await supabase
       .from('ticket_tiers')
       .select('*')
       .eq('event_id', event.id);

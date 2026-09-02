@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Check } from "lucide-react";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { formatNaira } from "@/lib/format";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 interface Tier {
   id: string;
@@ -22,6 +22,7 @@ export default function AdminTicketsPage() {
 
   useEffect(() => {
     async function fetchTiers() {
+      const supabase = getSupabase();
       const { data } = await supabase
         .from('ticket_tiers')
         .select('*');
@@ -54,6 +55,8 @@ export default function AdminTicketsPage() {
     const draft = drafts[id];
     const tier = tiers.find((t) => t.id === id);
     if (!tier || !draft) return;
+
+    const supabase = getSupabase();
 
     const { error } = await supabase
       .from('ticket_tiers')

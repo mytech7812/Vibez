@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Check } from "lucide-react";
 import { AdminCard } from "@/components/admin/AdminCard";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 interface EventData {
   id: string;
@@ -36,6 +36,7 @@ export default function AdminEventPage() {
 
   useEffect(() => {
     async function fetchEvent() {
+      const supabase = getSupabase();
       const { data } = await supabase
         .from('events')
         .select('*')
@@ -68,6 +69,8 @@ export default function AdminEventPage() {
 
   async function handleSave() {
     if (!event) return;
+
+    const supabase = getSupabase();
 
     const updatedData = {
       title: form.title,

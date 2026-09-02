@@ -1,32 +1,53 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button } from "./Button";
 
 export function CheckoutForm({
-  queryString,
   total,
+  tierQuantities,
 }: {
-  queryString: string;
   total: string;
+  tierQuantities: Record<string, number>;
 }) {
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
-    const form = new FormData(e.currentTarget);
-    const params = new URLSearchParams(queryString);
-    params.set("name", String(form.get("fullName") || ""));
-    params.set("email", String(form.get("email") || ""));
+    setError(null);
 
-    // Simulated processing delay — payment integration hooks in here later.
-    setTimeout(() => {
-      router.push(`/checkout/confirmation?${params.toString()}`);
-    }, 300);
+    const form = new FormData(e.currentTarget);
+    const name = String(form.get("fullName") || "");
+    const email = String(form.get("email") || "");
+    const phone = String(form.get("phone") || "");
+
+    try {
+      const response = await fetch("/api/paystack/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name,
+          phone,
+          tierQuantities,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Payment initialization failed");
+      }
+
+      // Redirect to Paystack
+      window.location.href = data.authorization_url;
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -56,13 +77,11 @@ export function CheckoutForm({
         />
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-surface-line pt-6">
-        <h3 className="text-sm font-medium text-ink">Payment</h3>
-        <div className="rounded-card border border-dashed border-surface-line bg-surface-raised/40 p-4 text-sm text-ink-muted">
-          Payment processing will be added at checkout. No charge is made in
-          this preview — continuing will simulate a completed order.
+      {error && (
+        <div className="rounded-md bg-red-500/10 border border-red-500 p-3 text-sm text-red-500">
+          {error}
         </div>
-      </div>
+      )}
 
       <Button
         type="submit"
@@ -72,7 +91,7 @@ export function CheckoutForm({
         className="w-full"
       >
         <Lock size={15} />
-        {submitting ? "Processing…" : `Pay ${total}`}
+        {submitting ? "Processing..." : `Pay ${total}`}
       </Button>
     </form>
   );

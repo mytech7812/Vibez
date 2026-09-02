@@ -1,39 +1,52 @@
 import { redirect } from "next/navigation";
-import { getEvent } from "@/lib/data";
-import { OrderSummary, OrderLine } from "@/components/OrderSummary";
 import { CheckoutForm } from "@/components/CheckoutForm";
+import { OrderSummary, type OrderLine } from "@/components/OrderSummary";
+import { getEvent } from "@/lib/data";
 import { formatNaira } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
+
+type CheckoutSearchParams = Record<string, string | string[] | undefined>;
 
 export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: CheckoutSearchParams;
 }) {
-  const params = await searchParams;
   const event = await getEvent();
 
   if (!event) {
-    redirect("/");
+    redirect("/#tickets");
   }
 
   const lines: OrderLine[] = event.tiers
-    .map((tier: any) => {
-      const raw = params[tier.id];
-      const qty = Array.isArray(raw) ? Number(raw[0]) : Number(raw || 0);
-      return { tierId: tier.id, name: tier.name, qty, price: tier.price };
+    .map((tier) => {
+      const rawQuantity = searchParams[tier.id];
+      const quantity = Array.isArray(rawQuantity)
+        ? Number(rawQuantity[0])
+        : Number(rawQuantity || 0);
+
+      return {
+        tierId: tier.id,
+        name: tier.name,
+        qty: Number.isInteger(quantity) && quantity > 0 ? quantity : 0,
+        price: tier.price,
+      };
     })
-    .filter((line: any) => line.qty > 0);
+    .filter((line) => line.qty > 0);
 
   if (lines.length === 0) {
     redirect("/#tickets");
   }
 
-  const subtotal = lines.reduce((sum, l) => sum + l.qty * l.price, 0);
+  const tierQuantities = Object.fromEntries(
+    lines.map((line) => [line.tierId, line.qty])
+  );
+  const subtotal = lines.reduce(
+    (sum, line) => sum + line.qty * line.price,
+    0
+  );
   const total = subtotal + Math.round(subtotal * 0.05);
-
-  const queryString = new URLSearchParams(
-    Object.fromEntries(lines.map((l) => [l.tierId, String(l.qty)]))
-  ).toString();
 
   return (
     <section className="container-page grid grid-cols-1 gap-12 pb-24 pt-36 lg:grid-cols-[1fr_400px] lg:gap-16">
@@ -45,7 +58,10 @@ export default async function CheckoutPage({
           Almost there
         </h1>
         <div className="mt-10 max-w-lg">
-          <CheckoutForm queryString={queryString} total={formatNaira(total)} />
+          <CheckoutForm
+            total={formatNaira(total)}
+            tierQuantities={tierQuantities}
+          />
         </div>
       </div>
 

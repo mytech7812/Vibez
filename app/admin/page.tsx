@@ -6,7 +6,7 @@ import { AdminCard, StatCard, StatusDot } from "@/components/admin/AdminCard";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { TicketSplitChart } from "@/components/admin/TicketSplitChart";
 import { formatNaira } from "@/lib/format";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 interface Order {
   id: string;
@@ -35,6 +35,7 @@ export default function AdminOverviewPage() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
+      const supabase = getSupabase();
       
       // Fetch orders
       const { data: ordersData } = await supabase

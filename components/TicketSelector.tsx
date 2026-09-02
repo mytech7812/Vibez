@@ -81,6 +81,11 @@ export function TicketSelector({ event }: { event: EventRecord }) {
                       </li>
                     ))}
                   </ul>
+                  {/* Remaining tickets count */}
+<p className="mt-2 text-xs text-ink-faint">
+  {tier.quantityAvailable} tickets remaining
+</p>
+
                 </div>
               </div>
 

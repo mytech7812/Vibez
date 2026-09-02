@@ -6,6 +6,8 @@ import { formatEventDate } from "@/lib/format";
 import Image from "next/image";
 import landingImage from "../../landing.png";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const event = await getEvent();
 

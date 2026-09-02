@@ -4,7 +4,8 @@ import { resolve } from "node:path";
 config({ path: resolve(process.cwd(), ".env.local") });
 
 async function seed() {
-  const { supabaseAdmin } = await import("../lib/supabase-admin");
+  const { getSupabaseAdmin } = await import("../lib/supabase-admin");
+  const supabaseAdmin = getSupabaseAdmin();
 
   console.log('🌱 Seeding database...');
 

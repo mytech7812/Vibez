@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { AdminCard, StatusDot } from "@/components/admin/AdminCard";
 import { formatNaira } from "@/lib/format";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 interface Order {
   id: string;
@@ -26,6 +26,7 @@ export default function AdminAttendeesPage() {
 
   useEffect(() => {
     async function fetchOrders() {
+      const supabase = getSupabase();
       const { data } = await supabase
         .from('orders')
         .select('*')

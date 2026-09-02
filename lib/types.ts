@@ -2,10 +2,12 @@ export type TicketTier = {
   id: string;
   name: string;
   description: string;
-  price: number; // in smallest currency unit displayed as whole number (NGN)
+  price: number;
   perks: string[];
   quantityAvailable: number;
   isSoldOut?: boolean;
+  total_capacity: number;  // ← ADD THIS
+  sold_count: number;      // ← ADD THIS
 };
 
 export type EventRecord = {

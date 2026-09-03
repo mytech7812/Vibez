@@ -52,7 +52,7 @@ export const TicketEmail = ({
           <Section style={greetingSection}>
             <Text style={greetingText}>Hey {buyerName.split(" ")[0]},</Text>
             <Text style={bodyText}>
-              You're all set for <strong>{eventTitle}</strong>. Here are your tickets.
+              You&apos;re all set for <strong>{eventTitle}</strong>. Here are your tickets.
             </Text>
           </Section>
 

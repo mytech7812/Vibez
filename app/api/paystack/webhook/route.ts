@@ -103,31 +103,43 @@ export async function POST(request: Request) {
         console.log('📦 Tier map:', JSON.stringify(tierMap));
 
         // Generate unique ticket code
-        function generateTicketCode(orderRef: string, tierName: string, index: number) {
-          const tierShort = tierName.slice(0, 4).toUpperCase();
-          return `${orderRef}-${tierShort}-${String(index).padStart(2, '0')}`;
-        }
+// Generate a random 6-character alphanumeric code
+function generateShortCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
         // Create tickets
         const ticketsToInsert: any[] = [];
         let ticketCount = 0;
 
-        for (const [tierId, quantity] of Object.entries(tierQuantities) as [string, number][]) {
-          const tierName = tierMap[tierId] || 'TKT';
-          
-          for (let i = 0; i < quantity; i++) {
-            ticketCount++;
-            const uniqueCode = generateTicketCode(orderRef, tierName, ticketCount);
-            ticketsToInsert.push({
-              order_id: orderId,
-              tier_id: tierId,
-              unique_code: uniqueCode,
-              attendee_name: orderData.buyer_name,
-              attendee_email: orderData.buyer_email,
-              is_verified: false,
-            });
-          }
-        }
+const usedCodes = new Set<string>();
+
+for (const [tierId, quantity] of Object.entries(tierQuantities) as [string, number][]) {
+  for (let i = 0; i < quantity; i++) {
+    let uniqueCode;
+    let attempts = 0;
+    // Generate unique 6-char code (no duplicates)
+    do {
+      uniqueCode = generateShortCode();
+      attempts++;
+    } while (usedCodes.has(uniqueCode) && attempts < 100);
+    
+    usedCodes.add(uniqueCode);
+    ticketsToInsert.push({
+      order_id: orderId,
+      tier_id: tierId,
+      unique_code: uniqueCode,
+      attendee_name: orderData.buyer_name,
+      attendee_email: orderData.buyer_email,
+      is_verified: false,
+    });
+  }
+}
 
         console.log(`📦 Tickets to insert: ${ticketsToInsert.length}`);
         if (ticketsToInsert.length > 0) {

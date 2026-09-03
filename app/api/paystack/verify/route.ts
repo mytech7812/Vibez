@@ -46,6 +46,12 @@ export async function GET(request: Request) {
     // Get ticket lines from metadata
     const ticketLines = payment.data.metadata?.ticket_lines || [];
 
+    // Get ticket codes for this order
+    const { data: ticketCodes } = await supabaseAdmin
+      .from('tickets')
+      .select('unique_code')
+      .eq('order_id', orderId);
+
     return NextResponse.json({
       success: true,
       order,
@@ -56,8 +62,10 @@ export async function GET(request: Request) {
         venueName: event.venue_name,
       } : null,
       ticketLines,
+      ticketCodes: ticketCodes || [],  // ← Added this
     });
   } catch (error) {
+    console.error('Verify error:', error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }

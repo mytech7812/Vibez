@@ -41,6 +41,10 @@ type TicketLine = {
   price: number;
 };
 
+type TicketCode = {
+  unique_code: string;
+};
+
 function PaymentIssue({ title, message }: { title: string; message: string }) {
   return (
     <section className="container-page flex min-h-[60vh] flex-col items-center justify-center pb-24 pt-36 text-center">
@@ -75,11 +79,11 @@ export default function ConfirmationPage({
   const [order, setOrder] = useState<Order | null>(null);
   const [event, setEvent] = useState<EventData | null>(null);
   const [ticketLines, setTicketLines] = useState<TicketLine[]>([]);
+  const [ticketCodes, setTicketCodes] = useState<TicketCode[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function verifyPayment() {
-      // Get reference from URL params
       const params = new URLSearchParams(window.location.search);
       const reference = params.get("reference") || params.get("trxref");
 
@@ -102,6 +106,7 @@ export default function ConfirmationPage({
         setOrder(data.order);
         setEvent(data.event);
         setTicketLines(data.ticketLines || []);
+        setTicketCodes(data.ticketCodes || []);
         setLoading(false);
       } catch (err) {
         setError("Could not verify payment. Please refresh.");
@@ -212,105 +217,84 @@ export default function ConfirmationPage({
           </div>
         </div>
 
-<div className="flex flex-col items-center bg-surface-raised px-6 py-6">
-  <div className="flex flex-col items-center gap-4 w-full max-w-md">
-    <h3 className="text-sm font-medium text-ink">Your Tickets</h3>
-    
- {ticketLines && ticketLines.length > 0 ? (
-  ticketLines.map((line, index) => {
-    // Generate unique code per ticket using order reference + tier + number
-    const tierShort = line.tierId ? line.tierId.slice(0, 4) : 'TKT';
-    const ticketCodes = Array.from({ length: line.quantity }, (_, i) => 
-      `${order.order_reference}-${tierShort}-${String(i + 1).padStart(2, '0')}`
-    );
-    
-    return ticketCodes.map((code, ticketIndex) => (
-      <div key={code} className="w-full flex flex-col items-center gap-3 border-b border-surface-line/60 pb-5 last:border-0 last:pb-0">
-        {/* Ticket Label */}
-        <div className="flex items-center gap-3 w-full justify-center">
-          <span className="text-sm font-medium text-ink">{line.name}</span>
-          <span className="text-xs text-ink-muted">Ticket #{ticketIndex + 1}</span>
-          <span className="text-[10px] text-ink-faint font-mono ml-2">{code}</span>
+        <div className="flex flex-col items-center bg-surface-raised px-6 py-6">
+          <div className="flex flex-col items-center gap-4 w-full max-w-md">
+            <h3 className="text-sm font-medium text-ink">Your Tickets</h3>
+            
+            {ticketCodes && ticketCodes.length > 0 ? (
+              ticketCodes.map((ticket: TicketCode, index: number) => (
+                <div key={ticket.unique_code} className="w-full flex flex-col items-center gap-3 border-b border-surface-line/60 pb-5 last:border-0 last:pb-0">
+                  <div className="flex items-center gap-3 w-full justify-center">
+                    <span className="text-sm font-medium text-ink">Ticket #{index + 1}</span>
+                  </div>
+                  <div className="rounded-xl bg-white p-3 shadow-sm" id={`qr-${ticket.unique_code}`}>
+                    <QRCodeDisplay value={ticket.unique_code} />
+                  </div>
+                  <div className="flex gap-3 mt-1">
+                    <button
+                      onClick={() => {
+                        try {
+                          const container = document.querySelector(`#qr-${ticket.unique_code}`);
+                          const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
+                          if (canvas) {
+                            const link = document.createElement('a');
+                            link.download = `ticket-${ticket.unique_code}.png`;
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                          }
+                        } catch (err) {
+                          alert('Could not save QR code.');
+                        }
+                      }}
+                      className="flex items-center gap-2 rounded-full bg-surface border border-surface-line px-4 py-2 text-xs font-medium text-ink hover:bg-surface-raised hover:border-ink-muted transition"
+                    >
+                      <Download size={14} /> Save
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const container = document.querySelector(`#qr-${ticket.unique_code}`);
+                          const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
+                          if (canvas) {
+                            const blob = await new Promise<Blob>((resolve) => {
+                              canvas.toBlob((b) => resolve(b!), 'image/png');
+                            });
+                            const file = new File([blob], `ticket-${ticket.unique_code}.png`, { type: 'image/png' });
+                            if (navigator.share) {
+                              await navigator.share({
+                                title: 'My Ticket',
+                                text: `Ticket for ${event.title}`,
+                                files: [file],
+                              });
+                            } else {
+                              const url = `${window.location.origin}/verify?code=${ticket.unique_code}`;
+                              await navigator.clipboard.writeText(url);
+                              alert('Ticket link copied!');
+                            }
+                          }
+                        } catch (err) {
+                          if ((err as Error).name !== 'AbortError') {
+                            alert('Could not share.');
+                          }
+                        }
+                      }}
+                      className="flex items-center gap-2 rounded-full bg-signal px-4 py-2 text-xs font-medium text-white hover:bg-signal-dim transition"
+                    >
+                      <Share2 size={14} /> Share
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-ink-faint font-mono">ID: {ticket.unique_code}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-ink-muted">Loading tickets...</p>
+            )}
+            
+            <p className="text-xs text-ink-faint mt-2">
+              Show these QR codes at the door for entry.
+            </p>
+          </div>
         </div>
-        
-        {/* QR Code */}
-        <div className="rounded-xl bg-white p-3 shadow-sm" id={`qr-${code}`}>
-          <QRCodeDisplay value={code} />
-        </div>
-        
-        {/* Action Buttons - Side by Side */}
-        <div className="flex gap-3 mt-1">
-          {/* Save Button */}
-          <button
-            onClick={() => {
-              try {
-                const container = document.querySelector(`#qr-${code}`);
-                const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
-                if (canvas) {
-                  const link = document.createElement('a');
-                  link.download = `ticket-${code}.png`;
-                  link.href = canvas.toDataURL('image/png');
-                  link.click();
-                }
-              } catch (err) {
-                alert('Could not save QR code.');
-              }
-            }}
-            className="flex items-center gap-2 rounded-full bg-surface border border-surface-line px-4 py-2 text-xs font-medium text-ink hover:bg-surface-raised hover:border-ink-muted transition"
-          >
-            <Download size={14} /> Save
-          </button>
-
-          {/* Share Button */}
-          <button
-            onClick={async () => {
-              try {
-                const container = document.querySelector(`#qr-${code}`);
-                const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
-                if (canvas) {
-                  const blob = await new Promise<Blob>((resolve) => {
-                    canvas.toBlob((b) => resolve(b!), 'image/png');
-                  });
-                  const file = new File([blob], `ticket-${code}.png`, { type: 'image/png' });
-                  
-                  if (navigator.share) {
-                    await navigator.share({
-                      title: 'My Ticket',
-                      text: `Ticket for ${event.title} - ${line.name}`,
-                      files: [file],
-                    });
-                  } else {
-                    const url = `${window.location.origin}/verify?code=${code}`;
-                    await navigator.clipboard.writeText(url);
-                    alert('Ticket link copied! Share it with your friends.');
-                  }
-                }
-              } catch (err) {
-                if ((err as Error).name !== 'AbortError') {
-                  alert('Could not share. Please take a screenshot.');
-                }
-              }
-            }}
-            className="flex items-center gap-2 rounded-full bg-signal px-4 py-2 text-xs font-medium text-white hover:bg-signal-dim transition"
-          >
-            <Share2 size={14} /> Share
-          </button>
-        </div>
-
-        {/* Ticket Code */}
-        <p className="text-[10px] text-ink-faint font-mono">ID: {code}</p>
-      </div>
-    ));
-  })
-) : (
-  <p className="text-sm text-ink-muted">No tickets to display.</p>
-)}
-    
-    <p className="text-xs text-ink-faint mt-2">
-      Show these QR codes at the door for entry.
-    </p>
-  </div>
-</div>
 
         <div className="grid grid-cols-2 gap-4 border-t border-surface-line bg-surface-raised/50 px-6 py-4 text-sm">
           <div>

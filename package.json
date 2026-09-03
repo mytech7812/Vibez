@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@paystack/paystack-sdk": "^1.2.1",
+    "@react-email/components": "^1.0.12",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
     "@yudiel/react-qr-scanner": "^2.6.0",
@@ -20,7 +21,9 @@
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.15.4"
+    "react-email": "^6.9.3",
+    "recharts": "^2.15.4",
+    "resend": "^6.25.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

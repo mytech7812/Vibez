@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getPaystackSecret, verifyPayment } from "@/lib/paystack";
+import { sendTicketEmail } from "@/lib/email/send";
 
 export const runtime = "nodejs";
 
@@ -146,25 +147,46 @@ for (const [tierId, quantity] of Object.entries(tierQuantities) as [string, numb
           console.log('📦 First ticket sample:', JSON.stringify(ticketsToInsert[0]));
         }
 
-        // 4. Insert tickets
-        if (ticketsToInsert.length > 0) {
-          console.log('🔄 Inserting tickets...');
-          const { data: insertedData, error: ticketError } = await supabaseAdmin
-            .from('tickets')
-            .insert(ticketsToInsert)
-            .select();
+// 4. Insert tickets
+if (ticketsToInsert.length > 0) {
+  console.log('🔄 Inserting tickets...');
+  const { data: insertedData, error: ticketError } = await supabaseAdmin
+    .from('tickets')
+    .insert(ticketsToInsert)
+    .select();
 
-          if (ticketError) {
-            console.error('❌ TICKET INSERT ERROR:');
-            console.error('❌ Code:', ticketError.code);
-            console.error('❌ Message:', ticketError.message);
-            console.error('❌ Details:', ticketError.details);
-            console.error('❌ Hint:', ticketError.hint);
-          } else {
-            console.log(`✅ Generated ${ticketsToInsert.length} tickets for order ${orderId}`);
-            console.log('📦 Inserted data:', JSON.stringify(insertedData));
-          }
+  if (ticketError) {
+    console.error('❌ TICKET INSERT ERROR:');
+    console.error('❌ Code:', ticketError.code);
+    console.error('❌ Message:', ticketError.message);
+    console.error('❌ Details:', ticketError.details);
+    console.error('❌ Hint:', ticketError.hint);
+  } else {
+    console.log(`✅ Generated ${ticketsToInsert.length} tickets for order ${orderId}`);
+    console.log('📦 Inserted data:', JSON.stringify(insertedData));
+    
+    // Send email
+    try {
+      console.log('📧 Sending ticket email...');
+      const { data: eventData } = await supabaseAdmin
+        .from('events')
+        .select('*')
+        .eq('id', orderData.event_id)
+        .single();
+
+      if (eventData) {
+        const emailResult = await sendTicketEmail(orderData, ticketsToInsert, eventData);
+        if (emailResult.success) {
+          console.log('✅ Email sent to:', orderData.buyer_email);
+        } else {
+          console.error('❌ Email failed:', emailResult.error);
         }
+      }
+    } catch (emailError) {
+      console.error('❌ Email error:', emailError);
+    }
+  }
+}
 
         // 5. Update sold_count
         console.log('🔄 Updating sold_count...');

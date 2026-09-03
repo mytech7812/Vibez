@@ -6,16 +6,18 @@ import { AdminCard, StatCard, StatusDot } from "@/components/admin/AdminCard";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { TicketSplitChart } from "@/components/admin/TicketSplitChart";
 import { formatNaira } from "@/lib/format";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase } from '@/lib/supabase';
+
 
 interface Order {
   id: string;
   buyer_name: string;
-  email: string;
+  buyer_email: string;
   ticket_type: string;
   quantity: number;
   amount: number;
-  status: string;
+  payment_status: string;
+  order_reference: string;
 }
 
 interface Tier {
@@ -34,8 +36,9 @@ export default function AdminOverviewPage() {
 
   useEffect(() => {
     async function fetchData() {
-      setLoading(true);
       const supabase = getSupabase();
+
+      setLoading(true);
       
       // Fetch orders
       const { data: ordersData } = await supabase
@@ -60,6 +63,11 @@ export default function AdminOverviewPage() {
     }
 
     fetchData();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Calculate stats
@@ -189,11 +197,11 @@ export default function AdminOverviewPage() {
             <tbody>
               {orders.slice(0, 6).map((order) => (
                 <tr key={order.id} className="border-t border-[var(--a-line)]">
-                  <td className="py-3 text-[var(--a-ink)]">{order.id.slice(0, 8)}</td>
+                  <td className="py-3 text-[var(--a-ink)]">{order.order_reference || order.id.slice(0, 8)}</td>
                   <td className="py-3 text-[var(--a-ink-muted)]">{order.buyer_name}</td>
-                  <td className="py-3 text-[var(--a-ink-muted)]">{order.ticket_type}</td>
+                  <td className="py-3 text-[var(--a-ink-muted)]">{order.ticket_type || 'N/A'}</td>
                   <td className="py-3">
-                    <StatusDot status={order.status as "Successful" | "Pending" | "Failed"} />
+                    <StatusDot status={order.payment_status as "Successful" | "Pending" | "Failed"} />
                   </td>
                   <td className="py-3 text-right text-[var(--a-ink)]">
                     {formatNaira(order.amount)}

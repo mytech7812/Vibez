@@ -76,8 +76,8 @@ export const TicketEmail = ({
             </Heading>
 
             <Text style={introText}>
-              You're officially on the list for {eventTitle}. Keep this email
-              handy for the day of the event.
+              You&apos;re officially on the list for {eventTitle}. Keep this email
+handy for the day of the event.
             </Text>
           </Section>
 
@@ -190,8 +190,8 @@ export const TicketEmail = ({
             <Text style={reminderTitle}>KEEP THIS EMAIL HANDY</Text>
 
             <Text style={reminderText}>
-              You'll need your QR code to enter the event. We recommend
-              keeping this email accessible on your phone on the day.
+              You&apos;ll need your QR code to enter the event. We recommend
+keeping this email accessible on your phone on the day.
             </Text>
 
             <Text style={idReminder}>

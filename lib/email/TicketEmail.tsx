@@ -36,94 +36,187 @@ export const TicketEmail = ({
   venueAddress,
   tickets,
 }: TicketEmailProps) => {
-  const previewText = `Your tickets for ${eventTitle}`;
+  const previewText = `Your Vibe District ticket for ${eventTitle} is confirmed`;
 
   return (
     <Html>
       <Head />
+
       <Preview>{previewText}</Preview>
+
       <Body style={main}>
         <Container style={container}>
-          {/* Header - Boarding Pass Style */}
-          <Section style={headerSection}>
+          {/* =========================================
+              HEADER
+          ========================================= */}
+
+          <Section style={header}>
             <Row>
-              <Column style={headerLeft}>
-                <Text style={headerTitle}>VIBE DISTRICT</Text>
-                <Text style={headerSubtitle}>BOARDING PASS</Text>
+              <Column>
+                <Text style={brand}>VIBE DISTRICT</Text>
               </Column>
+
               <Column style={headerRight}>
-                <Text style={eventBadge}>EVENT TICKET</Text>
+                <Text style={confirmedBadge}>CONFIRMED</Text>
               </Column>
             </Row>
           </Section>
 
-          {/* Event Name - Large */}
-          <Section style={eventNameSection}>
-            <Text style={eventName}>{eventTitle}</Text>
+          {/* =========================================
+              INTRO
+          ========================================= */}
+
+          <Section style={introSection}>
+            <Text style={greeting}>Hey {buyerName},</Text>
+
+            <Heading style={mainHeading}>
+              Your ticket is
+              <br />
+              <span style={pinkText}>confirmed.</span>
+            </Heading>
+
+            <Text style={introText}>
+              You're officially on the list for {eventTitle}. Keep this email
+              handy for the day of the event.
+            </Text>
           </Section>
 
-          {/* Event Details - Like Flight Details */}
-          <Section style={detailsGrid}>
-            <Row style={detailsRow}>
-              <Column style={detailColumn}>
+          {/* =========================================
+              EVENT INFORMATION
+          ========================================= */}
+
+          <Section style={eventSection}>
+            <Text style={sectionEyebrow}>YOUR EVENT</Text>
+
+            <Heading style={eventTitleStyle}>{eventTitle}</Heading>
+
+            <Hr style={lightDivider} />
+
+            <Row style={eventDetailsRow}>
+              <Column style={eventDetailColumn}>
                 <Text style={detailLabel}>DATE</Text>
                 <Text style={detailValue}>{eventDate}</Text>
               </Column>
-              <Column style={detailColumn}>
-                <Text style={detailLabel}>DOORS OPEN</Text>
+
+              <Column style={eventDetailColumn}>
+                <Text style={detailLabel}>TIME</Text>
                 <Text style={detailValue}>{eventTime}</Text>
               </Column>
-              <Column style={detailColumn}>
+            </Row>
+
+            <Row style={venueRow}>
+              <Column>
                 <Text style={detailLabel}>VENUE</Text>
-                <Text style={detailValue}>{venueName}</Text>
+
+                <Text style={venueNameStyle}>{venueName}</Text>
+
+                <Text style={venueAddressStyle}>{venueAddress}</Text>
               </Column>
             </Row>
           </Section>
 
-          {/* Divider */}
-          <Hr style={divider} />
+          {/* =========================================
+              TICKETS
+          ========================================= */}
 
-          {/* Ticket(s) - Boarding Pass Style */}
           {tickets.map((ticket, index) => (
-            <Section key={ticket.code} style={ticketSection}>
-              <Row style={ticketRow}>
-                <Column style={ticketLeft}>
-                  <Text style={ticketLabel}>TICKET {index + 1}</Text>
-                  <Text style={ticketTier}>{ticket.tier}</Text>
-                  <Text style={ticketCodeLabel}>PASSENGER</Text>
-                  <Text style={ticketCode}>{buyerName}</Text>
-                </Column>
-                <Column style={ticketRight}>
-                  <Text style={ticketCodeLabel}>TICKET ID</Text>
-                  <Text style={ticketCodeValue}>{ticket.code}</Text>
-                </Column>
-              </Row>
+            <Section key={ticket.code} style={ticketWrapper}>
+              <Section style={ticketCard}>
+                {/* Ticket heading */}
+
+                <Row>
+                  <Column>
+                    <Text style={ticketNumber}>
+                      TICKET {String(index + 1).padStart(2, "0")}
+                    </Text>
+
+                    <Text style={ticketTier}>{ticket.tier}</Text>
+
+                    <Text style={guestLabel}>GUEST</Text>
+
+                    <Text style={guestName}>{buyerName}</Text>
+                  </Column>
+                </Row>
+
+                {/* Entry code */}
+
+                <Section style={codeSection}>
+                  <Text style={codeLabel}>ENTRY CODE</Text>
+
+                  <Text style={entryCode}>
+                    {formatCode(ticket.code)}
+                  </Text>
+
+                  <Text style={codeHelp}>
+                    Use this code if your ticket needs to be verified
+                    manually.
+                  </Text>
+                </Section>
+
+                {/* QR */}
+
+                <Section style={qrSection}>
+                  <Text style={scanTitle}>SCAN TO ENTER</Text>
+
+                  <Text style={scanSubtitle}>
+                    Show this QR code at the entrance
+                  </Text>
+
+                  <Section style={qrBox}>
+                    <Img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
+                        ticket.code
+                      )}`}
+                      alt={`QR code for ticket ${ticket.code}`}
+                      width="240"
+                      height="240"
+                      style={qrImage}
+                    />
+                  </Section>
+
+                  <Text style={qrBottomText}>
+                    Your QR code is unique to this ticket.
+                  </Text>
+                </Section>
+              </Section>
             </Section>
           ))}
 
-          {/* QR Code - Full Width, Bold, Below */}
-          <Section style={qrSection}>
-            <Text style={qrTitle}>SCAN TO ENTER</Text>
-            <Text style={qrSubtitle}>Show this QR code at the door</Text>
-            <Container style={qrContainer}>
-              <Img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${tickets[0]?.code || 'TICKET'}`}
-                alt="QR Code"
-                style={qrImage}
-              />
-            </Container>
-            <Text style={qrInstruction}>Present this QR code at the entrance for scanning</Text>
+          {/* =========================================
+              ENTRY REMINDER
+          ========================================= */}
+
+          <Section style={reminderSection}>
+            <Text style={reminderTitle}>KEEP THIS EMAIL HANDY</Text>
+
+            <Text style={reminderText}>
+              You'll need your QR code to enter the event. We recommend
+              keeping this email accessible on your phone on the day.
+            </Text>
+
+            <Text style={idReminder}>
+              Valid ID may be required for entry.
+            </Text>
           </Section>
 
-          {/* Footer - Tear-off Style */}
-          <Section style={footerSection}>
-            <Text style={footerText}>
-              <span style={footerIcon}>✦</span> Valid ID required for entry <span style={footerIcon}>✦</span>
+          {/* =========================================
+              FOOTER
+          ========================================= */}
+
+          <Section style={footer}>
+            <Text style={footerBrand}>VIBE DISTRICT</Text>
+
+            <Text style={footerContact}>
+              Questions? Contact{" "}
+              <a
+                href="mailto:support@vibingdistrict.com"
+                style={footerLink}
+              >
+                support@vibingdistrict.com
+              </a>
             </Text>
-            <Text style={footerTextSmall}>
-              Questions? Contact support@vibingdistrict.com
-            </Text>
-            <Text style={footerFinePrint}>
+
+            <Text style={copyright}>
               © {new Date().getFullYear()} Vibe District. All rights reserved.
             </Text>
           </Section>
@@ -133,251 +226,385 @@ export const TicketEmail = ({
   );
 };
 
-// Styles - Boarding Pass / Flight Ticket Inspired
-const main = {
-  backgroundColor: "#f0ece6",
-  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
-  padding: "30px 0",
+/* =========================================
+   HELPERS
+========================================= */
+
+/**
+ * Makes a 5-digit code easier to read.
+ *
+ * Example:
+ * 12345 → 1 2 3 4 5
+ *
+ * If the supplied code is longer than 5 characters,
+ * it will simply be displayed as supplied.
+ */
+const formatCode = (code: string) => {
+  const cleanCode = code.trim();
+
+  if (cleanCode.length === 5) {
+    return cleanCode.split("").join(" ");
+  }
+
+  return cleanCode;
 };
+
+/* =========================================
+   MAIN
+========================================= */
+
+const main = {
+  backgroundColor: "#efede9",
+  fontFamily:
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  margin: "0",
+  padding: "40px 16px",
+};
+
+/* =========================================
+   CONTAINER
+========================================= */
 
 const container = {
   backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "0",
   maxWidth: "600px",
-  borderRadius: "16px",
+  margin: "0 auto",
+  borderRadius: "20px",
   overflow: "hidden",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.08)",
 };
 
-// Header
-const headerSection = {
+/* =========================================
+   HEADER
+========================================= */
+
+const header = {
   backgroundColor: "#0b0b0e",
-  padding: "20px 30px",
+  padding: "26px 32px",
 };
 
-const headerLeft = {
-  width: "70%",
+const brand = {
+  color: "#ffffff",
+  fontSize: "17px",
+  fontWeight: "800",
+  letterSpacing: "4px",
+  margin: "0",
 };
 
 const headerRight = {
-  width: "30%",
   textAlign: "right" as const,
 };
 
-const headerTitle = {
-  color: "#ffffff",
-  fontSize: "20px",
-  fontWeight: "700",
-  letterSpacing: "3px",
-  margin: "0",
-  fontFamily: "monospace",
-};
-
-const headerSubtitle = {
+const confirmedBadge = {
   color: "#ff2d5e",
-  fontSize: "11px",
-  fontWeight: "600",
-  letterSpacing: "4px",
-  margin: "2px 0 0",
-};
-
-const eventBadge = {
-  color: "#ffffff",
-  fontSize: "10px",
-  fontWeight: "600",
-  letterSpacing: "2px",
-  backgroundColor: "#ff2d5e",
-  padding: "4px 12px",
-  borderRadius: "20px",
-  display: "inline-block",
+  fontSize: "9px",
+  fontWeight: "800",
+  letterSpacing: "1.5px",
   margin: "0",
 };
 
-// Event Name
-const eventNameSection = {
-  padding: "24px 30px 10px",
+/* =========================================
+   INTRO
+========================================= */
+
+const introSection = {
+  padding: "42px 36px 34px",
 };
 
-const eventName = {
-  fontSize: "26px",
-  fontWeight: "700",
+const greeting = {
+  color: "#777777",
+  fontSize: "14px",
+  fontWeight: "500",
+  margin: "0 0 18px",
+};
+
+const mainHeading = {
   color: "#0b0b0e",
+  fontSize: "42px",
+  lineHeight: "1.05",
+  fontWeight: "800",
+  letterSpacing: "-1.8px",
+  margin: "0 0 20px",
+};
+
+const pinkText = {
+  color: "#ff2d5e",
+};
+
+const introText = {
+  color: "#666666",
+  fontSize: "15px",
+  lineHeight: "1.6",
   margin: "0",
-  letterSpacing: "-0.5px",
+  maxWidth: "480px",
 };
 
-// Details Grid
-const detailsGrid = {
-  padding: "10px 30px 20px",
+/* =========================================
+   EVENT SECTION
+========================================= */
+
+const eventSection = {
+  backgroundColor: "#f7f5f1",
+  padding: "30px 36px 34px",
 };
 
-const detailsRow = {
-  backgroundColor: "#f8f6f2",
-  borderRadius: "12px",
-  padding: "12px 16px",
+const sectionEyebrow = {
+  color: "#ff2d5e",
+  fontSize: "9px",
+  fontWeight: "800",
+  letterSpacing: "2px",
+  margin: "0 0 9px",
 };
 
-const detailColumn = {
-  width: "33.33%",
+const eventTitleStyle = {
+  color: "#0b0b0e",
+  fontSize: "28px",
+  lineHeight: "1.15",
+  fontWeight: "800",
+  letterSpacing: "-0.8px",
+  margin: "0",
+};
+
+const lightDivider = {
+  borderColor: "#dedbd5",
+  margin: "24px 0",
+};
+
+const eventDetailsRow = {
+  marginBottom: "24px",
+};
+
+const eventDetailColumn = {
+  width: "50%",
 };
 
 const detailLabel = {
-  fontSize: "9px",
-  fontWeight: "600",
   color: "#888888",
+  fontSize: "8px",
+  fontWeight: "800",
   letterSpacing: "1.5px",
-  margin: "0 0 2px",
-  textTransform: "uppercase" as const,
+  margin: "0 0 5px",
 };
 
 const detailValue = {
-  fontSize: "14px",
-  fontWeight: "600",
   color: "#0b0b0e",
+  fontSize: "14px",
+  fontWeight: "700",
   margin: "0",
 };
 
-// Divider
-const divider = {
-  borderColor: "#e8e4de",
-  margin: "0 30px",
+const venueRow = {
+  marginTop: "4px",
 };
 
-// Ticket Section - Boarding Pass Style
-const ticketSection = {
-  padding: "16px 30px",
+const venueNameStyle = {
+  color: "#0b0b0e",
+  fontSize: "14px",
+  fontWeight: "700",
+  margin: "0 0 3px",
+};
+
+const venueAddressStyle = {
+  color: "#777777",
+  fontSize: "12px",
+  lineHeight: "1.5",
   margin: "0",
-  borderBottom: "1px dashed #e8e4de",
 };
 
-const ticketRow = {
-  display: "flex" as const,
+/* =========================================
+   TICKET WRAPPER
+========================================= */
+
+const ticketWrapper = {
+  padding: "28px 24px 0",
+  backgroundColor: "#ffffff",
 };
 
-const ticketLeft = {
-  width: "65%",
+const ticketCard = {
+  border: "1px solid #e5e2dc",
+  borderRadius: "18px",
+  overflow: "hidden",
+  backgroundColor: "#ffffff",
 };
 
-const ticketRight = {
-  width: "35%",
-  textAlign: "right" as const,
-};
+/* =========================================
+   TICKET DETAILS
+========================================= */
 
-const ticketLabel = {
-  fontSize: "9px",
-  fontWeight: "600",
+const ticketNumber = {
   color: "#ff2d5e",
+  fontSize: "9px",
+  fontWeight: "800",
   letterSpacing: "2px",
-  margin: "0 0 4px",
-  textTransform: "uppercase" as const,
+  margin: "26px 28px 7px",
 };
 
 const ticketTier = {
-  fontSize: "16px",
-  fontWeight: "700",
   color: "#0b0b0e",
-  margin: "0 0 6px",
+  fontSize: "23px",
+  fontWeight: "800",
+  letterSpacing: "-0.5px",
+  margin: "0 28px 22px",
 };
 
-const ticketCodeLabel = {
+const guestLabel = {
+  color: "#999999",
   fontSize: "8px",
+  fontWeight: "800",
+  letterSpacing: "1.5px",
+  margin: "0 28px 4px",
+};
+
+const guestName = {
+  color: "#0b0b0e",
+  fontSize: "14px",
   fontWeight: "600",
-  color: "#888888",
-  letterSpacing: "1px",
-  margin: "0 0 2px",
-  textTransform: "uppercase" as const,
+  margin: "0 28px 26px",
 };
 
-const ticketCode = {
-  fontSize: "13px",
-  fontWeight: "500",
-  color: "#0b0b0e",
-  margin: "0",
-};
+/* =========================================
+   ENTRY CODE
+========================================= */
 
-const ticketCodeValue = {
-  fontSize: "13px",
-  fontWeight: "700",
-  color: "#0b0b0e",
-  fontFamily: "monospace",
-  margin: "0",
-};
-
-// QR Section - Full Width, Bold
-const qrSection = {
-  padding: "24px 30px 30px",
+const codeSection = {
+  backgroundColor: "#0b0b0e",
   textAlign: "center" as const,
-  backgroundColor: "#faf8f5",
+  padding: "25px 20px 27px",
 };
 
-const qrTitle = {
+const codeLabel = {
+  color: "#a8a8ad",
+  fontSize: "9px",
+  fontWeight: "800",
+  letterSpacing: "2.5px",
+  margin: "0 0 10px",
+};
+
+const entryCode = {
+  color: "#ffffff",
+  fontSize: "38px",
+  lineHeight: "1",
+  fontWeight: "900",
+  letterSpacing: "9px",
+  margin: "0 0 12px",
+  paddingLeft: "9px",
+};
+
+const codeHelp = {
+  color: "#a8a8ad",
   fontSize: "10px",
-  fontWeight: "700",
-  color: "#0b0b0e",
-  letterSpacing: "3px",
-  textTransform: "uppercase" as const,
-  margin: "0 0 4px",
-};
-
-const qrSubtitle = {
-  fontSize: "13px",
-  fontWeight: "400",
-  color: "#666666",
-  margin: "0 0 16px",
-};
-
-const qrContainer = {
-  backgroundColor: "#ffffff",
-  padding: "16px",
-  borderRadius: "12px",
-  display: "inline-block" as const,
-  border: "2px solid #e8e4de",
-  maxWidth: "200px",
+  lineHeight: "1.5",
   margin: "0 auto",
+  maxWidth: "330px",
+};
+
+/* =========================================
+   QR SECTION
+========================================= */
+
+const qrSection = {
+  textAlign: "center" as const,
+  padding: "28px 20px 30px",
+};
+
+const scanTitle = {
+  color: "#0b0b0e",
+  fontSize: "10px",
+  fontWeight: "900",
+  letterSpacing: "2.5px",
+  margin: "0 0 5px",
+};
+
+const scanSubtitle = {
+  color: "#777777",
+  fontSize: "12px",
+  margin: "0 0 20px",
+};
+
+const qrBox = {
+  backgroundColor: "#ffffff",
+  border: "1px solid #e7e4df",
+  borderRadius: "14px",
+  padding: "14px",
+  display: "inline-block" as const,
 };
 
 const qrImage = {
-  width: "200px",
-  height: "200px",
   display: "block",
+  width: "240px",
+  height: "240px",
 };
 
-const qrInstruction = {
+const qrBottomText = {
+  color: "#999999",
+  fontSize: "10px",
+  margin: "14px 0 0",
+};
+
+/* =========================================
+   REMINDER
+========================================= */
+
+const reminderSection = {
+  padding: "34px 36px",
+  textAlign: "center" as const,
+};
+
+const reminderTitle = {
+  color: "#0b0b0e",
+  fontSize: "9px",
+  fontWeight: "900",
+  letterSpacing: "2px",
+  margin: "0 0 10px",
+};
+
+const reminderText = {
+  color: "#777777",
+  fontSize: "12px",
+  lineHeight: "1.6",
+  maxWidth: "430px",
+  margin: "0 auto 12px",
+};
+
+const idReminder = {
+  color: "#0b0b0e",
   fontSize: "11px",
   fontWeight: "600",
-  color: "#0b0b0e",
-  letterSpacing: "0.5px",
-  margin: "16px 0 0",
+  margin: "0",
 };
 
-// Footer
-const footerSection = {
-  padding: "20px 30px",
+/* =========================================
+   FOOTER
+========================================= */
+
+const footer = {
+  backgroundColor: "#0b0b0e",
   textAlign: "center" as const,
-  borderTop: "2px solid #0b0b0e",
+  padding: "28px 24px",
 };
 
-const footerText = {
+const footerBrand = {
+  color: "#ffffff",
   fontSize: "12px",
-  fontWeight: "500",
-  color: "#0b0b0e",
-  margin: "0 0 6px",
+  fontWeight: "800",
+  letterSpacing: "3px",
+  margin: "0 0 12px",
 };
 
-const footerIcon = {
-  color: "#ff2d5e",
-};
-
-const footerTextSmall = {
+const footerContact = {
+  color: "#88888d",
   fontSize: "11px",
-  color: "#888888",
-  margin: "4px 0 8px",
+  margin: "0 0 10px",
 };
 
-const footerFinePrint = {
-  fontSize: "10px",
-  color: "#aaaaaa",
+const footerLink = {
+  color: "#ff2d5e",
+  textDecoration: "none",
+};
+
+const copyright = {
+  color: "#55555a",
+  fontSize: "9px",
   margin: "0",
 };
 

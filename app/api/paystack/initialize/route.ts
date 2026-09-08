@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       return sum + tier.price * quantity;
     }, 0);
 
-    const serviceFee = Math.round(subtotal * 0.05);
+    const serviceFee = Math.round(subtotal * 0.01);
     const total = subtotal + serviceFee;
     const eventId = tiers[0].event_id;
     const orderRef = `VD-${randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;

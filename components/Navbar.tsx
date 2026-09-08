@@ -7,7 +7,6 @@ import { LinkButton } from "./Button";
 
 const navLinks = [
   { label: "About", href: "#about" },
-  { label: "Lineup", href: "#lineup" },
   { label: "Venue", href: "#venue" },
 ];
 

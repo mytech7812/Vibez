@@ -43,9 +43,6 @@ export function Footer() {
               <a href="#about" className="hover:text-ink transition-colors">
                 About the night
               </a>
-              <a href="#lineup" className="hover:text-ink transition-colors">
-                Lineup
-              </a>
               <a href="#tickets" className="hover:text-ink transition-colors">
                 Tickets
               </a>

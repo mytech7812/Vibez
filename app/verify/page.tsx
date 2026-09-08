@@ -233,7 +233,7 @@ export default function VerifyPage() {
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
-                className="w-full bg-gray-800 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-10 text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-signal uppercase"
+                className="w-full bg-gray-800 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-10 text-sm sm:text-base text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-signal uppercase"
               />
               <button
                 onClick={handleManualSearch}
@@ -304,12 +304,12 @@ export default function VerifyPage() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
                   {result.ticket && !result.ticket.is_verified && (
                     <button
                       onClick={handleCheckIn}
                       disabled={isCheckingIn}
-                      className="w-full sm:flex-1 bg-emerald-500 text-white py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base hover:bg-emerald-600 transition disabled:opacity-50"
+                      className="w-full sm:w-auto sm:flex-none min-w-0 sm:min-w-[180px] bg-emerald-500 text-white py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base hover:bg-emerald-600 transition disabled:opacity-50"
                     >
                       {isCheckingIn ? "Checking in..." : "Check In"}
                     </button>
@@ -318,7 +318,7 @@ export default function VerifyPage() {
                   {result.ticket && result.ticket.is_verified && (
                     <button
                       disabled
-                      className="w-full sm:flex-1 bg-yellow-500/20 text-yellow-400 py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base cursor-not-allowed"
+                      className="w-full sm:w-auto sm:flex-none min-w-0 sm:min-w-[180px] bg-yellow-500/20 text-yellow-400 py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base cursor-not-allowed"
                     >
                       Already Checked In
                     </button>
@@ -330,7 +330,7 @@ export default function VerifyPage() {
                         setResult(null);
                         setManualCode("");
                       }}
-                      className="w-full sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition text-sm sm:text-base"
+                      className="w-full sm:flex-1 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition text-sm sm:text-base"
                     >
                       New Search
                     </button>

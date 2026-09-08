@@ -11,7 +11,7 @@ export function OrderSummary({
   lines: OrderLine[];
 }) {
   const subtotal = lines.reduce((sum, l) => sum + l.qty * l.price, 0);
-  const serviceFee = Math.round(subtotal * 0.05);
+  const serviceFee = Math.round(subtotal * 0.01);
   const total = subtotal + serviceFee;
 
   return (

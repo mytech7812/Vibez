@@ -99,24 +99,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Lineup */}
-      <section id="lineup" className="border-y border-surface-line bg-surface/40">
-        <div className="container-page py-20 sm:py-28">
-          <h2 className="font-display text-3xl leading-tight text-ink sm:text-4xl">
-            Lineup
-          </h2>
-          <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-ink-muted">
-            Four sets, one stage, no repeats.
-          </p>
-          <div className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-card border border-surface-line sm:grid-cols-2 lg:grid-cols-4">
-            {event.lineup.map((act: string) => (
-              <div key={act} className="bg-base px-6 py-8">
-                <span className="font-display text-lg text-ink">{act}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* Venue */}
       <section id="venue" className="container-page py-20 sm:py-28">
@@ -131,7 +114,7 @@ export default async function HomePage() {
               {event.venueAddress}, {event.city}
             </p>
             <p className="mt-4 text-sm text-ink-faint">
-              Entry closes 45 minutes after doors. Valid government ID
+              Strictly no ticket, no entry. QR code or Ticked-ID
               required at check-in.
             </p>
           </div>

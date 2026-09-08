@@ -46,7 +46,7 @@ export default async function CheckoutPage({
     (sum, line) => sum + line.qty * line.price,
     0
   );
-  const total = subtotal + Math.round(subtotal * 0.05);
+  const total = subtotal + Math.round(subtotal * 0.01);
 
   return (
     <section className="container-page grid grid-cols-1 gap-12 pb-24 pt-36 lg:grid-cols-[1fr_400px] lg:gap-16">

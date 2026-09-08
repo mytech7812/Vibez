@@ -68,3 +68,10 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
+
+// Add this at the VERY BOTTOM
+export async function GET() {
+  return NextResponse.json({ 
+    error: "Method not allowed. Please use POST." 
+  }, { status: 405 });
+}

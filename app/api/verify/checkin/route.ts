@@ -41,7 +41,6 @@ export async function POST(request: Request) {
       .update({
         is_verified: true,
         verified_at: new Date().toISOString(),
-        verified_by: "scanner",
       })
       .eq("id", ticket.id)
       .eq("is_verified", false)
@@ -49,10 +48,11 @@ export async function POST(request: Request) {
       .single();
 
     if (updateError || !updated) {
+      console.error("Ticket check-in update failed:", updateError);
       return NextResponse.json({
         success: false,
-        message: "Ticket already checked in or not found"
-      }, { status: 404 });
+        message: updateError?.message || "Ticket already checked in or not found"
+      }, { status: updateError ? 500 : 404 });
     }
 
     return NextResponse.json({

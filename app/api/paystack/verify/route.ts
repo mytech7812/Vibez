@@ -46,11 +46,10 @@ export async function GET(request: Request) {
     // Get ticket lines from metadata
     const ticketLines = payment.data.metadata?.ticket_lines || [];
 
-    // Get ticket codes for this order
-    const { data: ticketCodes } = await supabaseAdmin
-      .from('tickets')
-      .select('unique_code')
-      .eq('order_id', orderId);
+const { data: ticketCodes } = await supabaseAdmin
+  .from('tickets')
+  .select('unique_code, secret_token')
+  .eq('order_id', orderId);
 
     return NextResponse.json({
       success: true,

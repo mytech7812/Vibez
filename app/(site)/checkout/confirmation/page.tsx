@@ -43,6 +43,7 @@ type TicketLine = {
 
 type TicketCode = {
   unique_code: string;
+  secret_token: string;
 };
 
 function PaymentIssue({ title, message }: { title: string; message: string }) {
@@ -228,7 +229,7 @@ export default function ConfirmationPage({
                     <span className="text-sm font-medium text-ink">Ticket #{index + 1}</span>
                   </div>
                   <div className="rounded-xl bg-white p-3 shadow-sm" id={`qr-${ticket.unique_code}`}>
-                    <QRCodeDisplay value={ticket.unique_code} />
+                    <QRCodeDisplay value={ticket.secret_token} />
                   </div>
                   <div className="flex gap-3 mt-1">
                     <button

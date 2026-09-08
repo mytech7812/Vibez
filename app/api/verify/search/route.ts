@@ -3,46 +3,42 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
-    const { email, code } = await request.json();
+    const { code } = await request.json();
 
-    const supabaseAdmin = getSupabaseAdmin();
-
-    // If code is provided, search by unique code
-    if (code) {
-      const { data: ticket, error } = await supabaseAdmin
-        .from("verification_tickets")
-        .select("*")
-        .eq("unique_code", code)
-        .single();
-
-      if (error || !ticket) {
-        return NextResponse.json({
-          success: false,
-          tickets: [],
-          error: "Ticket not found"
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        tickets: [ticket]
-      });
-    }
-
-    // Otherwise search by email
-    if (!email) {
+    if (!code) {
       return NextResponse.json({
         success: false,
         tickets: [],
-        error: "Email or ticket code required"
+        error: "Ticket code required"
       }, { status: 400 });
     }
 
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Search by secret_token OR unique_code
     const { data: tickets, error } = await supabaseAdmin
-      .from("verification_tickets")
-      .select("*")
-      .eq("buyer_email", email.toLowerCase())
-      .order("created_at", { ascending: false });
+      .from("tickets")
+      .select(`
+        unique_code,
+        secret_token,
+        is_verified,
+        attendee_name,
+        attendee_email,
+        order_id,
+        tier_id,
+        ticket_tiers (
+          name
+        ),
+        orders (
+          buyer_name,
+          buyer_email,
+          event_id,
+          events (
+            title
+          )
+        )
+      `)
+      .or(`unique_code.eq.${code},secret_token.eq.${code}`);
 
     if (error) {
       return NextResponse.json({
@@ -52,9 +48,19 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
+    // Format response
+    const formattedTickets = tickets.map((t: any) => ({
+      unique_code: t.unique_code,
+      secret_token: t.secret_token,
+      tier_name: t.ticket_tiers?.name || "Unknown",
+      buyer_name: t.orders?.buyer_name || t.attendee_name || "Unknown",
+      event_title: t.orders?.events?.title || "Event",
+      is_verified: t.is_verified || false,
+    }));
+
     return NextResponse.json({
       success: true,
-      tickets: tickets || []
+      tickets: formattedTickets
     });
   } catch (error) {
     console.error("Search error:", error);

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { getSupabase } from "@/lib/supabase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 
@@ -10,7 +11,46 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    // Skip auth check if already on login page
+    if (pathname === "/admin/login") {
+      setLoading(false);
+      return;
+    }
+
+    async function checkAuth() {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/admin/login");
+        return;
+      }
+
+      setLoading(false);
+    }
+
+    checkAuth();
+  }, [router, pathname]);
+
+  // Show loading only for protected pages
+  if (loading && pathname !== "/admin/login") {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-signal border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // Login page - no sidebar
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
 
   return (
     <div
@@ -26,7 +66,6 @@ export default function AdminLayout({
               setTheme((t) => (t === "dark" ? "light" : "dark"))
             }
           />
-          <AdminMobileNav />
           <main className="flex-1 px-5 py-6 sm:px-8 sm:py-8">{children}</main>
         </div>
       </div>

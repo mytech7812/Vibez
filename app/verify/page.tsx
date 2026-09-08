@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { CheckCircle, XCircle, QrCode, Mail, Search, Users } from "lucide-react";
+import { CheckCircle, XCircle, QrCode, Search, Users } from "lucide-react";
 import { LinkButton } from "@/components/Button";
 
 const Scanner = dynamic(
@@ -30,8 +30,7 @@ export default function VerifyPage() {
   const [scanning, setScanning] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
-  const [searchMode, setSearchMode] = useState<"qr" | "email">("qr");
-  const [email, setEmail] = useState("");
+  const [searchMode, setSearchMode] = useState<"qr" | "manual">("qr");
   const [manualCode, setManualCode] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -107,50 +106,6 @@ export default function VerifyPage() {
     setScanning(true);
   };
 
-  // Email search
-  const handleEmailSearch = async () => {
-    if (!email.trim()) return;
-    
-    setLoading(true);
-    
-    try {
-      const response = await fetch("/api/verify/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success && data.tickets && data.tickets.length > 0) {
-        const ticket = data.tickets[0];
-        setResult({
-          valid: true,
-          message: `Found ${data.tickets.length} ticket(s) for this email`,
-          ticket: {
-            code: ticket.unique_code,
-            tier: ticket.tier_name,
-            buyer: ticket.buyer_name,
-            event: ticket.event_title,
-            is_verified: ticket.is_verified || false,
-          }
-        });
-      } else {
-        setResult({
-          valid: false,
-          message: "No tickets found for this email."
-        });
-      }
-    } catch (error) {
-      setResult({
-        valid: false,
-        message: "Search failed. Please try again."
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Manual code search
   const handleManualSearch = async () => {
     if (!manualCode.trim()) return;
@@ -161,7 +116,7 @@ export default function VerifyPage() {
       const response = await fetch("/api/verify/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: manualCode.trim() }),
+        body: JSON.stringify({ code: manualCode.trim().toUpperCase() }),
       });
       
       const data = await response.json();
@@ -202,7 +157,7 @@ export default function VerifyPage() {
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
             <h1 className="text-xl sm:text-3xl font-display">Ticket Scanner</h1>
-            <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">Scan QR codes or search by email</p>
+            <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">Scan QR codes or enter ticket ID</p>
           </div>
           <LinkButton href="/admin" variant="outline" size="md" className="text-sm">
             Admin
@@ -222,16 +177,16 @@ export default function VerifyPage() {
           </button>
           <button
             onClick={() => {
-              setSearchMode("email");
+              setSearchMode("manual");
               setResult(null);
               setScanning(false);
             }}
             className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-lg transition text-xs sm:text-sm ${
-              searchMode === "email" ? "bg-signal text-white" : "text-gray-400 hover:text-white"
+              searchMode === "manual" ? "bg-signal text-white" : "text-gray-400 hover:text-white"
             }`}
           >
-            <Mail size={16} className="sm:size-[18px]" />
-            Email
+            <Search size={16} className="sm:size-[18px]" />
+            Ticket ID
           </button>
         </div>
 
@@ -266,50 +221,31 @@ export default function VerifyPage() {
           </div>
         )}
 
-        {/* Email Search */}
-        {searchMode === "email" && (
+        {/* Manual Ticket ID Search */}
+        {searchMode === "manual" && (
           <div className="bg-gray-900 rounded-xl p-4 sm:p-6">
-            <h2 className="text-base sm:text-xl font-medium mb-3 sm:mb-4">Search by Email</h2>
+            <h2 className="text-base sm:text-xl font-medium mb-3 sm:mb-4">Enter Ticket ID</h2>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
               <input
-                type="email"
-                placeholder="Enter attendee email..."
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleEmailSearch()}
-                className="w-full bg-gray-800 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-10 text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-signal"
+                type="text"
+                placeholder="Enter ticket code (e.g. A7K3P9)"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
+                className="w-full bg-gray-800 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 pl-9 sm:pl-10 text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-signal uppercase"
               />
               <button
-                onClick={handleEmailSearch}
+                onClick={handleManualSearch}
                 disabled={loading}
                 className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 bg-signal text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm hover:bg-signal-dim transition disabled:opacity-50"
               >
                 {loading ? "Searching..." : <Search size={16} className="sm:size-[18px]" />}
               </button>
             </div>
-
-            {/* Manual Code Entry */}
-            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-800">
-              <p className="text-xs sm:text-sm text-gray-400 mb-2">Or enter ticket code manually:</p>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. A7K3P9"
-                  value={manualCode}
-                  onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
-                  className="w-full bg-gray-800 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-signal uppercase"
-                />
-                <button
-                  onClick={handleManualSearch}
-                  disabled={loading}
-                  className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 bg-signal text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm hover:bg-signal-dim transition disabled:opacity-50"
-                >
-                  {loading ? "Searching..." : <Search size={16} className="sm:size-[18px]" />}
-                </button>
-              </div>
-            </div>
+            <p className="text-xs text-gray-500 mt-3">
+              Enter the 6-character code found on your ticket
+            </p>
           </div>
         )}
 
@@ -388,11 +324,10 @@ export default function VerifyPage() {
                     </button>
                   )}
 
-                  {result.ticket && searchMode === "email" && (
+                  {result.ticket && searchMode === "manual" && (
                     <button
                       onClick={() => {
                         setResult(null);
-                        setEmail("");
                         setManualCode("");
                       }}
                       className="w-full sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition text-sm sm:text-base"

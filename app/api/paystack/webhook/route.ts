@@ -54,19 +54,39 @@ export async function POST(request: Request) {
 
         const supabaseAdmin = getSupabaseAdmin();
 
-        // 1. Update order status
-        console.log('🔄 Updating order status...');
-        await supabaseAdmin
+        // 1. Check if order is already fulfilled
+        const { data: existingOrder } = await supabaseAdmin
+          .from('orders')
+          .select('payment_status, fulfillment_status')
+          .eq('id', orderId)
+          .single();
+
+        if (existingOrder?.payment_status === 'paid' && existingOrder?.fulfillment_status === 'fulfilled') {
+          console.log('⏭️ Order already fulfilled, skipping duplicate webhook');
+          return NextResponse.json({ received: true, already_processed: true });
+        }
+
+        // 2. Update order status with fulfillment guard
+        const { data: updatedOrder, error: updateError } = await supabaseAdmin
           .from('orders')
           .update({
             payment_status: 'paid',
             payment_method: verification.data.channel,
             payment_reference: reference,
             paid_at: new Date().toISOString(),
+            fulfillment_status: 'processing',
           })
-          .eq('id', orderId);
+          .eq('id', orderId)
+          .eq('payment_status', 'pending')
+          .select()
+          .single();
 
-        // 2. Get order details
+        if (updateError || !updatedOrder) {
+          console.log('⏭️ Order already processed or not found');
+          return NextResponse.json({ received: true, already_processed: true });
+        }
+
+        // 3. Get order details
         console.log('🔄 Fetching order details...');
         const { data: orderData } = await supabaseAdmin
           .from('orders')
@@ -86,7 +106,7 @@ export async function POST(request: Request) {
           orderRef: orderData.order_reference
         });
 
-        // 3. Generate tickets
+        // 4. Generate tickets
         const tierQuantities = orderData.tier_quantities || {};
         const orderRef = orderData.order_reference;
 
@@ -103,92 +123,96 @@ export async function POST(request: Request) {
 
         console.log('📦 Tier map:', JSON.stringify(tierMap));
 
-        // Generate unique ticket code
-// Generate a random 6-character alphanumeric code
-function generateShortCode() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
+        // Generate a random 6-character alphanumeric code
+        function generateShortCode() {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          let code = '';
+          for (let i = 0; i < 6; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          return code;
+        }
 
         // Create tickets
         const ticketsToInsert: any[] = [];
-        let ticketCount = 0;
+        const usedCodes = new Set<string>();
 
-const usedCodes = new Set<string>();
-
-for (const [tierId, quantity] of Object.entries(tierQuantities) as [string, number][]) {
-  for (let i = 0; i < quantity; i++) {
-    let uniqueCode;
-    let attempts = 0;
-    // Generate unique 6-char code (no duplicates)
-    do {
-      uniqueCode = generateShortCode();
-      attempts++;
-    } while (usedCodes.has(uniqueCode) && attempts < 100);
-    
-    usedCodes.add(uniqueCode);
-    ticketsToInsert.push({
-      order_id: orderId,
-      tier_id: tierId,
-      unique_code: uniqueCode,
-      attendee_name: orderData.buyer_name,
-      attendee_email: orderData.buyer_email,
-      is_verified: false,
-    });
-  }
-}
+        for (const [tierId, quantity] of Object.entries(tierQuantities) as [string, number][]) {
+          for (let i = 0; i < quantity; i++) {
+            let uniqueCode;
+            let attempts = 0;
+            do {
+              uniqueCode = generateShortCode();
+              attempts++;
+            } while (usedCodes.has(uniqueCode) && attempts < 100);
+            
+            usedCodes.add(uniqueCode);
+            ticketsToInsert.push({
+              order_id: orderId,
+              tier_id: tierId,
+              unique_code: uniqueCode,
+              attendee_name: orderData.buyer_name,
+              attendee_email: orderData.buyer_email,
+              is_verified: false,
+            });
+          }
+        }
 
         console.log(`📦 Tickets to insert: ${ticketsToInsert.length}`);
         if (ticketsToInsert.length > 0) {
           console.log('📦 First ticket sample:', JSON.stringify(ticketsToInsert[0]));
         }
 
-// 4. Insert tickets
-if (ticketsToInsert.length > 0) {
-  console.log('🔄 Inserting tickets...');
-  const { data: insertedData, error: ticketError } = await supabaseAdmin
-    .from('tickets')
-    .insert(ticketsToInsert)
-    .select();
+        // 5. Insert tickets
+        if (ticketsToInsert.length > 0) {
+          console.log('🔄 Inserting tickets...');
+          const { data: insertedData, error: ticketError } = await supabaseAdmin
+            .from('tickets')
+            .insert(ticketsToInsert)
+            .select();
 
-  if (ticketError) {
-    console.error('❌ TICKET INSERT ERROR:');
-    console.error('❌ Code:', ticketError.code);
-    console.error('❌ Message:', ticketError.message);
-    console.error('❌ Details:', ticketError.details);
-    console.error('❌ Hint:', ticketError.hint);
-  } else {
-    console.log(`✅ Generated ${ticketsToInsert.length} tickets for order ${orderId}`);
-    console.log('📦 Inserted data:', JSON.stringify(insertedData));
-    
-    // Send email
-    try {
-      console.log('📧 Sending ticket email...');
-      const { data: eventData } = await supabaseAdmin
-        .from('events')
-        .select('*')
-        .eq('id', orderData.event_id)
-        .single();
+          if (ticketError) {
+            console.error('❌ TICKET INSERT ERROR:');
+            console.error('❌ Code:', ticketError.code);
+            console.error('❌ Message:', ticketError.message);
+            console.error('❌ Details:', ticketError.details);
+            console.error('❌ Hint:', ticketError.hint);
+          } else {
+            console.log(`✅ Generated ${ticketsToInsert.length} tickets for order ${orderId}`);
+            console.log('📦 Inserted data:', JSON.stringify(insertedData));
+            
+            // Send email
+            try {
+              console.log('📧 Sending ticket email...');
+              const { data: eventData } = await supabaseAdmin
+                .from('events')
+                .select('*')
+                .eq('id', orderData.event_id)
+                .single();
 
-      if (eventData) {
-        const emailResult = await sendTicketEmail(orderData, ticketsToInsert, eventData);
-        if (emailResult.success) {
-          console.log('✅ Email sent to:', orderData.buyer_email);
-        } else {
-          console.error('❌ Email failed:', emailResult.error);
+              if (eventData) {
+                const emailResult = await sendTicketEmail(orderData, ticketsToInsert, eventData);
+                if (emailResult.success) {
+                  console.log('✅ Email sent to:', orderData.buyer_email);
+                } else {
+                  console.error('❌ Email failed:', emailResult.error);
+                }
+              }
+            } catch (emailError) {
+              console.error('❌ Email error:', emailError);
+            }
+          }
         }
-      }
-    } catch (emailError) {
-      console.error('❌ Email error:', emailError);
-    }
-  }
-}
 
-        // 5. Update sold_count
+        // 6. Mark order as fulfilled
+        await supabaseAdmin
+          .from('orders')
+          .update({
+            fulfillment_status: 'fulfilled',
+          })
+          .eq('id', orderId);
+
+        // 7. Update sold_count
         console.log('🔄 Updating sold_count...');
         for (const [tierId, qty] of Object.entries(tierQuantities) as [string, number][]) {
           console.log(`📦 Updating sold_count for tier ${tierId}: +${qty}`);

@@ -1,13 +1,20 @@
 import { Resend } from "resend";
 import { TicketEmail } from "./TicketEmail";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendTicketEmail(
   order: any,
   tickets: any[],
   event: any
 ) {
+  const apiKey = process.env.RESEND_API_KEY;
+  
+  if (!apiKey) {
+    console.error("❌ RESEND_API_KEY is not set");
+    return { success: false, error: "API key missing" };
+  }
+
+  const resend = new Resend(apiKey);
+
   const formattedTickets = tickets.map((t) => ({
     code: t.unique_code,
     tier: t.ticket_tiers?.name || "Ticket",

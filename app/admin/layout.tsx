@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
+import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 
@@ -66,9 +67,12 @@ export default function AdminLayout({
               setTheme((t) => (t === "dark" ? "light" : "dark"))
             }
           />
-          <main className="flex-1 px-5 py-6 sm:px-8 sm:py-8">{children}</main>
+          <main className="flex-1 px-5 py-6 pb-24 sm:px-8 sm:pt-8 sm:pb-24 lg:py-8">
+            {children}
+          </main>
         </div>
       </div>
+      <AdminMobileNav />
     </div>
   );
 }

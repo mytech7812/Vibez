@@ -3,6 +3,7 @@ import { getSupabase } from "./supabase";
 
 export async function getEvent(): Promise<EventRecord | null> {
   const supabase = getSupabase();
+  
   const { data: event, error } = await supabase
     .from('events')
     .select('*, ticket_tiers(*)')
@@ -13,7 +14,6 @@ export async function getEvent(): Promise<EventRecord | null> {
     return null;
   }
 
-  // Log to debug
   console.log('Fetched tiers from DB:', event.ticket_tiers);
 
   return {

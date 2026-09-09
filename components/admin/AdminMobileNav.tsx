@@ -17,7 +17,7 @@ export function AdminMobileNav() {
   return (
     <nav
       aria-label="Admin navigation"
-      className="grid grid-cols-4 gap-1 border-b border-[var(--a-line)] bg-[var(--a-surface)] px-2 py-2 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 gap-1 border-t border-[var(--a-line)] bg-[var(--a-surface)] px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] lg:hidden"
     >
       {navItems.map((item) => {
         const active =

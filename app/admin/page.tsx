@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { AdminCard, StatCard, StatusDot } from "@/components/admin/AdminCard";
+import { AdminCard, StatCard } from "@/components/admin/AdminCard";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { TicketSplitChart } from "@/components/admin/TicketSplitChart";
 import { formatNaira } from "@/lib/format";
@@ -11,13 +11,11 @@ import { getSupabase } from '@/lib/supabase';
 
 interface Order {
   id: string;
+  order_reference: string;
   buyer_name: string;
   buyer_email: string;
-  ticket_type: string;
-  quantity: number;
-  amount: number;
-  payment_status: string;
-  order_reference: string;
+  total_amount: number;
+  tier_quantities: Record<string, number> | null;
 }
 
 interface Tier {
@@ -40,11 +38,14 @@ export default function AdminOverviewPage() {
 
       setLoading(true);
       
-      // Fetch orders
+      // Fetch only the transaction fields needed for the overview. Pending and
+      // failed orders must not appear as revenue or recent sales.
       const { data: ordersData } = await supabase
         .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('id, order_reference, buyer_name, buyer_email, total_amount, tier_quantities')
+        .eq('payment_status', 'paid')
+        .order('created_at', { ascending: false })
+        .limit(6);
 
       if (ordersData) {
         setOrders(ordersData);
@@ -72,7 +73,7 @@ export default function AdminOverviewPage() {
 
   // Calculate stats
   const totalTicketsSold = tiers.reduce((sum, t) => sum + (t.sold_count || 0), 0);
-  const totalRevenue = orders.reduce((sum, o) => sum + o.amount, 0);
+  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
   const totalCapacity = tiers.reduce((sum, t) => sum + t.total_capacity, 0);
   const remaining = totalCapacity - totalTicketsSold;
 
@@ -182,36 +183,57 @@ export default function AdminOverviewPage() {
         </AdminCard>
       </div>
 
-      <AdminCard title="Recent Transactions">
+      <AdminCard title="Recent Paid Transactions">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="text-xs text-[var(--a-ink-faint)]">
                 <th className="pb-3 font-medium">Order ID</th>
-                <th className="pb-3 font-medium">Buyer</th>
-                <th className="pb-3 font-medium">Type</th>
-                <th className="pb-3 font-medium">Status</th>
-                <th className="pb-3 text-right font-medium">Amount</th>
+                <th className="pb-3 font-medium">Name</th>
+                <th className="pb-3 font-medium">Email</th>
+                <th className="pb-3 font-medium">Ticket tier</th>
+                <th className="pb-3 text-right font-medium">Amount paid</th>
               </tr>
             </thead>
             <tbody>
-              {orders.slice(0, 6).map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="border-t border-[var(--a-line)]">
                   <td className="py-3 text-[var(--a-ink)]">{order.order_reference || order.id.slice(0, 8)}</td>
                   <td className="py-3 text-[var(--a-ink-muted)]">{order.buyer_name}</td>
-                  <td className="py-3 text-[var(--a-ink-muted)]">{order.ticket_type || 'N/A'}</td>
-                  <td className="py-3">
-                    <StatusDot status={order.payment_status as "Successful" | "Pending" | "Failed"} />
+                  <td className="py-3 text-[var(--a-ink-muted)]">{order.buyer_email}</td>
+                  <td className="py-3 text-[var(--a-ink-muted)]">
+                    {formatTierSummary(order.tier_quantities, tiers)}
                   </td>
                   <td className="py-3 text-right text-[var(--a-ink)]">
-                    {formatNaira(order.amount)}
+                    {formatNaira(Number(order.total_amount || 0))}
                   </td>
                 </tr>
               ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-10 text-center text-[var(--a-ink-faint)]">
+                    No paid transactions yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </AdminCard>
     </div>
   );
+}
+
+function formatTierSummary(
+  tierQuantities: Record<string, number> | null,
+  tiers: Tier[]
+) {
+  if (!tierQuantities) return "Ticket details unavailable";
+
+  const tierNames = new Map(tiers.map((tier) => [tier.id, tier.name]));
+  const summary = Object.entries(tierQuantities)
+    .filter(([, quantity]) => Number(quantity) > 0)
+    .map(([tierId, quantity]) => `${tierNames.get(tierId) || "Ticket"} × ${quantity}`);
+
+  return summary.length > 0 ? summary.join(", ") : "Ticket details unavailable";
 }

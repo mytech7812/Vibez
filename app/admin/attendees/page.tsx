@@ -11,34 +11,45 @@ interface Order {
   order_reference: string;
   buyer_name: string;
   buyer_email: string;
-  ticket_type: string;
-  quantity: number;
-  amount: number;
-  status: string;
+  total_amount: number;
+  payment_status: string;
+  created_at: string;
+  tier_quantities: Record<string, number> | null;
 }
 
-// Trigger deployment - Vercel deploy
+interface Tier {
+  id: string;
+  name: string;
+}
 
 export default function AdminAttendeesPage() {
   const [query, setQuery] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
+  const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchOrders() {
+    async function fetchData() {
       const supabase = getSupabase();
-      const { data } = await supabase
+      
+      const { data: ordersData } = await supabase
         .from('orders')
-        .select('*')
+        .select('id, order_reference, buyer_name, buyer_email, total_amount, payment_status, created_at, tier_quantities')
+        .eq('payment_status', 'paid')
         .order('created_at', { ascending: false });
 
-      if (data) {
-        setOrders(data);
-      }
+      if (ordersData) setOrders(ordersData);
+
+      const { data: tiersData } = await supabase
+        .from('ticket_tiers')
+        .select('id, name');
+
+      if (tiersData) setTiers(tiersData);
+
       setLoading(false);
     }
 
-    fetchOrders();
+    fetchData();
   }, []);
 
   const filtered = useMemo(() => {
@@ -64,7 +75,7 @@ export default function AdminAttendeesPage() {
             Attendees
           </h1>
           <p className="mt-1 text-sm text-[var(--a-ink-muted)]">
-            {orders.length} orders · {filtered.length} shown
+            {orders.length} paid orders · {filtered.length} shown
           </p>
         </div>
         <div className="relative w-full sm:w-72">
@@ -84,41 +95,50 @@ export default function AdminAttendeesPage() {
 
       <AdminCard>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-[860px] text-left text-sm">
             <thead>
               <tr className="text-xs text-[var(--a-ink-faint)]">
-                <th className="pb-3 font-medium">Order ID</th>
-                <th className="pb-3 font-medium">Buyer</th>
-                <th className="pb-3 font-medium">Email</th>
-                <th className="pb-3 font-medium">Type</th>
+                <th className="pb-3 font-medium">Time</th>
+                <th className="pb-3 font-medium">Name</th>
+                <th className="pb-3 font-medium">Buyer ID</th>
+                <th className="pb-3 font-medium">Ticket Tier</th>
                 <th className="pb-3 font-medium">Qty</th>
-                <th className="pb-3 font-medium">Status</th>
-                <th className="pb-3 text-right font-medium">Amount</th>
+                <th className="pb-3 text-right font-medium">Price</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t border-[var(--a-line)]">
-                  <td className="py-3 text-[var(--a-ink)]">{o.order_reference}</td>
+                  <td className="py-3 text-[var(--a-ink-muted)] whitespace-nowrap">
+                    {new Date(o.created_at).toLocaleString("en-NG", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </td>
                   <td className="py-3 text-[var(--a-ink)]">{o.buyer_name}</td>
-                  <td className="py-3 text-[var(--a-ink-muted)]">{o.buyer_email}</td>
-                  <td className="py-3 text-[var(--a-ink-muted)]">{o.ticket_type}</td>
-                  <td className="py-3 text-[var(--a-ink-muted)]">{o.quantity}</td>
-                  <td className="py-3">
-                    <StatusDot status={o.status as "Successful" | "Pending" | "Failed"} />
+                  <td className="py-3 text-[var(--a-ink-muted)] font-mono text-xs">
+                    {o.order_reference}
+                  </td>
+                  <td className="py-3 text-[var(--a-ink-muted)]">
+                    {formatTierSummary(o.tier_quantities, tiers)}
+                  </td>
+                  <td className="py-3 text-[var(--a-ink-muted)]">
+                    {formatQtySummary(o.tier_quantities)}
                   </td>
                   <td className="py-3 text-right text-[var(--a-ink)]">
-                    {formatNaira(o.amount)}
+                    {formatNaira(Number(o.total_amount || 0))}
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="py-10 text-center text-[var(--a-ink-faint)]"
                   >
-                    No orders match &ldquo;{query}&rdquo;.
+                    No paid orders match &ldquo;{query}&rdquo;.
                   </td>
                 </tr>
               )}
@@ -128,4 +148,25 @@ export default function AdminAttendeesPage() {
       </AdminCard>
     </div>
   );
+}
+
+function formatTierSummary(
+  tierQuantities: Record<string, number> | null,
+  tiers: Tier[]
+) {
+  if (!tierQuantities) return "—";
+  const tierNames = new Map(tiers.map((t) => [t.id, t.name]));
+  const summary = Object.entries(tierQuantities)
+    .filter(([, qty]) => Number(qty) > 0)
+    .map(([tierId]) => tierNames.get(tierId) || "Ticket");
+  return summary.length > 0 ? summary.join(", ") : "—";
+}
+
+function formatQtySummary(tierQuantities: Record<string, number> | null) {
+  if (!tierQuantities) return "—";
+  const total = Object.values(tierQuantities).reduce(
+    (sum, qty) => sum + Number(qty),
+    0
+  );
+  return total > 0 ? String(total) : "—";
 }

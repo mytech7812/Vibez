@@ -16,6 +16,7 @@ interface Order {
   buyer_email: string;
   total_amount: number;
   tier_quantities: Record<string, number> | null;
+  created_at: string;
 }
 
 interface Tier {
@@ -42,7 +43,7 @@ export default function AdminOverviewPage() {
       // failed orders must not appear as revenue or recent sales.
       const { data: ordersData } = await supabase
         .from('orders')
-        .select('id, order_reference, buyer_name, buyer_email, total_amount, tier_quantities')
+        .select('id, order_reference, buyer_name, buyer_email, total_amount, tier_quantities, created_at')
         .eq('payment_status', 'paid')
         .order('created_at', { ascending: false })
         .limit(6);
@@ -188,21 +189,34 @@ export default function AdminOverviewPage() {
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="text-xs text-[var(--a-ink-faint)]">
-                <th className="pb-3 font-medium">Order ID</th>
+                <th className="pb-3 font-medium">Time</th>
                 <th className="pb-3 font-medium">Name</th>
-                <th className="pb-3 font-medium">Email</th>
+                <th className="pb-3 font-medium">Buyer ID</th>
                 <th className="pb-3 font-medium">Ticket tier</th>
-                <th className="pb-3 text-right font-medium">Amount paid</th>
+                <th className="pb-3 font-medium">Qty</th>
+                <th className="pb-3 text-right font-medium">Price</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => (
                 <tr key={order.id} className="border-t border-[var(--a-line)]">
-                  <td className="py-3 text-[var(--a-ink)]">{order.order_reference || order.id.slice(0, 8)}</td>
-                  <td className="py-3 text-[var(--a-ink-muted)]">{order.buyer_name}</td>
-                  <td className="py-3 text-[var(--a-ink-muted)]">{order.buyer_email}</td>
+                  <td className="py-3 text-[var(--a-ink-muted)] whitespace-nowrap">
+                    {new Date(order.created_at).toLocaleString("en-NG", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </td>
+                  <td className="py-3 text-[var(--a-ink)]">{order.buyer_name}</td>
+                  <td className="py-3 text-[var(--a-ink-muted)] font-mono text-xs">
+                    {order.order_reference}
+                  </td>
                   <td className="py-3 text-[var(--a-ink-muted)]">
                     {formatTierSummary(order.tier_quantities, tiers)}
+                  </td>
+                  <td className="py-3 text-[var(--a-ink-muted)]">
+                    {formatQtySummary(order.tier_quantities)}
                   </td>
                   <td className="py-3 text-right text-[var(--a-ink)]">
                     {formatNaira(Number(order.total_amount || 0))}
@@ -211,7 +225,7 @@ export default function AdminOverviewPage() {
               ))}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-[var(--a-ink-faint)]">
+                  <td colSpan={6} className="py-10 text-center text-[var(--a-ink-faint)]">
                     No paid transactions yet.
                   </td>
                 </tr>
@@ -228,12 +242,21 @@ function formatTierSummary(
   tierQuantities: Record<string, number> | null,
   tiers: Tier[]
 ) {
-  if (!tierQuantities) return "Ticket details unavailable";
+  if (!tierQuantities) return "—";
 
   const tierNames = new Map(tiers.map((tier) => [tier.id, tier.name]));
   const summary = Object.entries(tierQuantities)
     .filter(([, quantity]) => Number(quantity) > 0)
-    .map(([tierId, quantity]) => `${tierNames.get(tierId) || "Ticket"} × ${quantity}`);
+    .map(([tierId]) => tierNames.get(tierId) || "Ticket");
 
-  return summary.length > 0 ? summary.join(", ") : "Ticket details unavailable";
+  return summary.length > 0 ? summary.join(", ") : "—";
+}
+
+function formatQtySummary(tierQuantities: Record<string, number> | null) {
+  if (!tierQuantities) return "—";
+  const total = Object.values(tierQuantities).reduce(
+    (sum, qty) => sum + Number(qty),
+    0
+  );
+  return total > 0 ? String(total) : "—";
 }

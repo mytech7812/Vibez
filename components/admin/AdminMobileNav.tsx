@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, LayoutGrid, Ticket, Users } from "lucide-react";
+import { CalendarDays, LayoutGrid, Ticket, Users, Send } from "lucide-react";
 
 const navItems = [
   { label: "Overview", href: "/admin", icon: LayoutGrid },
   { label: "Attendees", href: "/admin/attendees", icon: Users },
   { label: "Event", href: "/admin/event", icon: CalendarDays },
   { label: "Tickets", href: "/admin/tickets", icon: Ticket },
+  { label: "Broadcast", href: "/admin/broadcast", icon: Send },
 ];
 
 export function AdminMobileNav() {
@@ -17,7 +18,7 @@ export function AdminMobileNav() {
   return (
     <nav
       aria-label="Admin navigation"
-      className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 gap-1 border-t border-[var(--a-line)] bg-[var(--a-surface)] px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 gap-1 border-t border-[var(--a-line)] bg-[var(--a-surface)] px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] lg:hidden"
     >
       {navItems.map((item) => {
         const active =

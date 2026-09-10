@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Users, CalendarDays, Ticket } from "lucide-react";
+import { LayoutGrid, Users, CalendarDays, Ticket, Send } from "lucide-react";
 
 const navItems = [
   { label: "Overview", href: "/admin", icon: LayoutGrid },
   { label: "Attendees", href: "/admin/attendees", icon: Users },
   { label: "Event", href: "/admin/event", icon: CalendarDays },
   { label: "Tickets", href: "/admin/tickets", icon: Ticket },
+  { label: "Broadcast", href: "/admin/broadcast", icon: Send },
 ];
 
 export function AdminSidebar() {
